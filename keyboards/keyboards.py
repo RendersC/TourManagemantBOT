@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-
+import sqlite3
 
 kb = ReplyKeyboardMarkup(row_width=2,resize_keyboard=True)
 kb.add(
@@ -18,15 +18,20 @@ adminkb.add(
         KeyboardButton("Админ-панель"))
 
 
-ikb_tours = InlineKeyboardMarkup(row_width=1)
-ikb_tours.add(
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="1"),
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="2"),
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="3"),
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="4"),
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="5"),
-        InlineKeyboardButton("Все грани Казахстана (7 дней)",callback_data="6")
+adminpanel = InlineKeyboardMarkup().add(
+        InlineKeyboardButton("Добавить тур")
 )
 
 
-backkb= InlineKeyboardMarkup().add(InlineKeyboardButton("🔙 Назад", callback_data="back_to_main"))
+
+
+ikb_tours = InlineKeyboardMarkup(row_width=1)
+
+
+
+backkb = InlineKeyboardMarkup().add(InlineKeyboardButton("🔙 Назад", callback_data="back_to_main"),InlineKeyboardButton("Забронировать",callback_data="Reserve"))
+inline_admin_btn = InlineKeyboardMarkup(row_width=2)
+inline_admin_btn.add(
+    InlineKeyboardButton("Добавить тур",callback_data="add_tour"),
+    InlineKeyboardButton("Удалить тур по ID",callback_data="delete_tour")
+)
