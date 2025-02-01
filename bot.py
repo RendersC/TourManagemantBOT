@@ -1,7 +1,7 @@
 import os
 import json
 import sqlite3
-from database import add_tour,remove_tour,get_tours
+from database import add_tour,remove_tour,get_tours,get_id_for_callback
 import aiogram.types
 from aiogram.types import InlineKeyboardButton
 from aiogram import Bot, Dispatcher, types
@@ -79,6 +79,14 @@ with open("texts.json",'r',encoding="utf-8") as f:
     texts = json.load(f)
 
 
+#чтобы репрезентировать все туры извлекая из БД
+def represent_tours():
+    for tour in get_tours():
+        kb.ikb_tours.add(InlineKeyboardButton(tour[1],callback_data=tour[0]))
+
+
+
+
 #Хендлер все туры
 @dp.message_handler(text ="Все туры")
 async def send_welcome(message: types.Message):
@@ -119,12 +127,9 @@ async def process_callback_tour_details(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
 
 #разработка универсальной функций
-def represent_tours():
-    for tour in get_tours():
-        kb.ikb_tours.add(InlineKeyboardButton(tour[1],callback_data=tour[0]))
-
-
-
+@dp.callback_query_handler(lambda c: c.data == get_id_for_callback())
+async def process_callback_tour_details(callback_query: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query.id)
 
 
 
@@ -204,3 +209,4 @@ async def add_photo(message: types.Message, state: FSMContext):
 
 if __name__ == '__main__':
     executor.start_polling(dp)
+

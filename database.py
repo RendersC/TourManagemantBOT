@@ -42,4 +42,6 @@ def get_tours():
     cursor.execute("SELECT id, name FROM tours")
     return cursor.fetchall()
 
-
+def get_id_for_callback():
+    cursor.execute("SELECT id FROM tours")
+    return cursor.fetchall()
