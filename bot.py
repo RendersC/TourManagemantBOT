@@ -37,6 +37,8 @@ class Form(StatesGroup):
     img = State()
 
 
+class Delete_tour_cls(StatesGroup):
+    delete_tour_state = State()
 
 
 
@@ -190,6 +192,29 @@ async def add_photo(message: types.Message, state: FSMContext):
         await message.answer("Добавление тура закончен !")
     except:
         print("Ошибка в добавлений в базу данных")
+    await state.finish()
+
+
+#Колбэк для удалений тура
+@dp.callback_query_handler(lambda c: c.data == "delete_tour")
+async def delete_tour(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id,"Введите ID записи в базы данных чтобы удалить запись")
+    await Delete_tour_cls.delete_tour_state.set()
+    await bot.answer_callback_query(callback_query.id)
+
+
+#Принимаем ID тура
+@dp.message_handler(state=Delete_tour_cls.delete_tour_state)
+async def delete_tour(message: types.Message, state: FSMContext):
+    tour_id = message.text
+    print(tour_id)
+    try:
+        remove_tour(tour_id)
+        print(f"Тур с ID {tour_id} успешно удалён.")
+        await message.answer(f"Тур с ID {tour_id} успешно удалён.")
+    except Exception as e:
+        print(f"Ошибка при удалении тура: {e}")
+        await message.answer(f"Ошибка при удалении тура: {e}")
     await state.finish()
 
 
