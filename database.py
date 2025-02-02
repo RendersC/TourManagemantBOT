@@ -14,6 +14,15 @@ CREATE TABLE IF NOT EXISTS tours (
 ''')
 
 
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER UNIQUE
+)
+''')
+
+
+
 cursor.execute("""
            CREATE TABLE IF NOT EXISTS reserved_tours (
                id INTEGER PRIMARY KEY,
@@ -22,7 +31,7 @@ cursor.execute("""
                 start_date TEXT,
                 end_date TEXT,
                 price TEXT,
-                img TEXT
+                   img TEXT
            )
        """)
 conn.commit()
@@ -39,9 +48,21 @@ def remove_tour(tour_id):
 
 
 def get_tours():
-    cursor.execute("SELECT id, name FROM tours")
+    cursor.execute("SELECT id, caption FROM tours")
     return cursor.fetchall()
 
 def get_id_for_callback():
     cursor.execute("SELECT id FROM tours")
-    return cursor.fetchall()
+    return [row[0] for row in cursor.fetchall()]
+
+
+def get_especial_tour(id):
+    cursor.execute(
+        "SELECT caption, start_date, end_date, price, img FROM tours WHERE id = ?",
+        (id,)
+    )
+
+    return cursor.fetchone()
+
+
+

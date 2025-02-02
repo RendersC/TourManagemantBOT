@@ -25,7 +25,6 @@ adminpanel = InlineKeyboardMarkup().add(
 
 
 
-ikb_tours = InlineKeyboardMarkup(row_width=1)
 
 
 

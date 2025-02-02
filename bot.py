@@ -1,9 +1,9 @@
 import os
 import json
 import sqlite3
-from database import add_tour,remove_tour,get_tours,get_id_for_callback
+from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour
 import aiogram.types
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ dp = Dispatcher(bot,storage=storage)
 def get_db_connection():
     conn = sqlite3.connect('endtermdatabase.db')
     return conn
+
 
 
 class Form(StatesGroup):
@@ -80,17 +81,26 @@ with open("texts.json",'r',encoding="utf-8") as f:
 
 
 #чтобы репрезентировать все туры извлекая из БД
-def represent_tours():
+def get_fresh_tours():
+    ikb_tours = InlineKeyboardMarkup(row_width=1)
     for tour in get_tours():
-        kb.ikb_tours.add(InlineKeyboardButton(tour[1],callback_data=tour[0]))
+        ikb_tours.add(InlineKeyboardButton(tour[1],callback_data=tour[0]))
+    return ikb_tours
 
 
+#Универсальный колбэк хендлер для всех туров вывод характеристической информаций
+@dp.callback_query_handler(lambda c: c.data.isdigit() and int(c.data) in get_id_for_callback())
+async def handle_tour_callback(callback_query: CallbackQuery):
+    chahacteristics = get_especial_tour(int(callback_query.data))
+    repr_it = f"Описание: {chahacteristics[0]}\nВремя старта: {chahacteristics[1]}\nВремя оканчание: {chahacteristics[2]}\nЦена: {chahacteristics[3]}"
+    await bot.send_photo(callback_query.from_user.id, caption=repr_it, photo=chahacteristics[4])
+    await bot.answer_callback_query(callback_query.id)
 
 
 #Хендлер все туры
 @dp.message_handler(text ="Все туры")
 async def send_welcome(message: types.Message):
-    await message.answer(texts["Все туры"],reply_markup=kb.ikb_tours)
+    await message.answer(texts["Все туры"],reply_markup=get_fresh_tours())
 
 #хендлер о нас
 @dp.message_handler(text ="О нас")
@@ -112,26 +122,8 @@ async def send_welcome(message: types.Message):
 #BUTTON BACK
 @dp.callback_query_handler(lambda c: c.data == "back_to_main")
 async def back_to_main(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id,"Все туры: ", reply_markup=kb.ikb_tours)
+    await bot.send_message(callback_query.from_user.id,texts["Все туры"], reply_markup=get_fresh_tours())
     await bot.answer_callback_query(callback_query.id)
-
-
-#пока что потом уберу надо создать универсальную функцию
-@dp.callback_query_handler(lambda c: c.data == "1")
-async def process_callback_tour_details(callback_query: types.CallbackQuery):
-    await bot.send_photo(
-                         callback_query.from_user.id,
-                         photo=open('images/img.png', 'rb'),
-                         caption='ЦЕНА: 155000\nПАКЕТ: Питание + ЭКСКУРСИЯ + ИНСТРУКТОР И ТД',
-                         reply_markup=kb.backkb)
-    await bot.answer_callback_query(callback_query.id)
-
-#разработка универсальной функций
-@dp.callback_query_handler(lambda c: c.data == get_id_for_callback())
-async def process_callback_tour_details(callback_query: types.CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-
-
 
 
 
@@ -191,12 +183,8 @@ async def add_price(message: types.Message, state: FSMContext):
 async def add_photo(message: types.Message, state: FSMContext):
     # Получаем file_id фотографии
     file_id = message.photo[-1].file_id
-
-    # Получаем URL файла
-    file_info = await bot.get_file(file_id)
-    photo_url = f"https://api.telegram.org/file/bot{os.getenv('TOKEN')}/{file_info.file_path}"
     async with state.proxy() as data:
-        data['img'] = photo_url
+        data['img'] = file_id
     try:
         add_tour(caption=data['caption'], start_date=data['start_date'], end_date=data['end_date'], price=data['price'],img=data['img'])
         await message.answer("Добавление тура закончен !")
