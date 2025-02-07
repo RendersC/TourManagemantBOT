@@ -27,7 +27,7 @@ cursor.execute("""
            CREATE TABLE IF NOT EXISTS reserved_tours (
                id INTEGER PRIMARY KEY,
                user_id INTEGER,
-               tour_id TEXT UNIQUE
+               tour_id TEXT 
            )
        """)
 conn.commit()
@@ -71,7 +71,10 @@ def get_especial_tour(id):
     return cursor.fetchone()
 
 
-
+def is_tour_reserved(user_id, tour_id):
+    cursor.execute("SELECT 1 FROM reserved_tours WHERE user_id = ? AND tour_id = ?", (user_id, tour_id))
+    result = cursor.fetchone()
+    return result is not None
 
 
 

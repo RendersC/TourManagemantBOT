@@ -4,7 +4,6 @@ import sqlite3
 
 kb = ReplyKeyboardMarkup(row_width=2,resize_keyboard=True)
 kb.add(
-        KeyboardButton("Горящие туры"),
         KeyboardButton("Все туры"),
         KeyboardButton("Забронированные туры"),
         KeyboardButton("О нас"))

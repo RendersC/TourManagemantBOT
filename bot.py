@@ -2,7 +2,7 @@ import os
 import re
 import json
 import sqlite3
-from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour,add_to_reserved_tours,get_reserved_tours
+from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour,add_to_reserved_tours,get_reserved_tours,is_tour_reserved
 import aiogram.types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram import Bot, Dispatcher, types
@@ -70,6 +70,7 @@ async def send_welcome(message: types.Message):
 @dp.message_handler(commands=['id'])
 async def send_welcome(message: types.Message):
     await message.answer(message.from_user.id)
+    print(message.from_user.id)
 
 
 #Грузим джейсоны в текст
@@ -104,14 +105,17 @@ async def reserve(callback_query: types.CallbackQuery):
    try:
        match = re.match(r"^\d+", callback_query.data)
        if match:
-           tour_id = match.group()
-           add_to_reserved_tours(int(callback_query.from_user.id), tour_id)
-           await bot.send_message(callback_query.from_user.id,
-                                  "Тур успешно забронирован чтобы узнать по подробнее напишите вашему тур агенту @turarbek")
+              tour_id = match.group()
+              if is_tour_reserved(callback_query.from_user.id,tour_id):
+                  await bot.send_message(callback_query.from_user.id,"-ВЫ УЖЕ ЗАБРОНИРОВАЛИ ЭТОТ ТУР СМОТРИТЕ В РАЗДЕЛЕ -ЗАБРОНИРОВАННЫЕ ТУРЫ-")
+              else:
+                  add_to_reserved_tours(callback_query.from_user.id,tour_id)
+                  await bot.send_message(callback_query.from_user.id,"Вы успешно забронировали тур чтобы узнать подробнее напишите вашему тур агенту @marratoov1")
        else:
            await bot.send_message(callback_query.from_user.id, "Ошибка: не удалось извлечь ID тура.")
    except Exception as e:
-       await bot.send_message(callback_query.from_user.id,"ВЫ УЖЕ ЗАБРОНИРОВАЛИ ЭТОТ ТУР СМОТРИТЕ В РАЗДЕЛЕ -ЗАБРОНИРОВАННЫЕ ТУРЫ-")
+       await bot.send_message(callback_query.from_user.id,"-ВЫ УЖЕ ЗАБРОНИРОВАЛИ ЭТОТ ТУР СМОТРИТЕ В РАЗДЕЛЕ -ЗАБРОНИРОВАННЫЕ ТУРЫ-")
+       print(e)
    finally:
        await bot.answer_callback_query(callback_query.id)
 
