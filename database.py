@@ -36,7 +36,11 @@ def add_to_reserved_tours(user_id,tour_id):
     cursor.execute("INSERT INTO reserved_tours (user_id,tour_id) VALUES (?, ?)", (user_id,tour_id))
     conn.commit()
 
-
+def get_reserved_tours(user_id):
+    cursor.execute("SELECT tour_id FROM reserved_tours WHERE user_id = ?", (user_id,))
+    tours = cursor.fetchall()
+    print(tours)
+    return tours
 
 
 def add_tour(caption,start_date,end_date,price,img):
@@ -65,6 +69,7 @@ def get_especial_tour(id):
     )
 
     return cursor.fetchone()
+
 
 
 

@@ -2,7 +2,7 @@ import os
 import re
 import json
 import sqlite3
-from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour,add_to_reserved_tours
+from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour,add_to_reserved_tours,get_reserved_tours
 import aiogram.types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram import Bot, Dispatcher, types
@@ -132,7 +132,14 @@ async def about(message: types.Message):
 #Хендлер заброннированных туров
 @dp.message_handler(text ="Забронированные туры")
 async def show_reserved_tours(message: types.Message):
-    pass
+    tours_id = get_reserved_tours(message.from_user.id)
+    repr_btns = InlineKeyboardMarkup()
+    for id in tours_id:
+        print(id[0])#1 2 3
+        tour = get_especial_tour(id[0])
+        print(tour)
+        repr_btns.add(InlineKeyboardButton(tour[0],callback_data=id[0]))
+    await message.answer("Вот ваши заброннированные туры: ",reply_markup=repr_btns)
 
 
 #Хендлер админ-панель
