@@ -12,7 +12,6 @@ kb.add(
 
 adminkb = ReplyKeyboardMarkup(row_width=2,resize_keyboard=True)
 adminkb.add(
-        KeyboardButton("Горящие туры"),
         KeyboardButton("Все туры"),
         KeyboardButton("Забронированные туры"),
         KeyboardButton("О нас"),
