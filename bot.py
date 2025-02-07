@@ -1,7 +1,8 @@
 import os
+import re
 import json
 import sqlite3
-from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour
+from database import add_tour,remove_tour,get_tours,get_id_for_callback, get_especial_tour,add_to_reserved_tours
 import aiogram.types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram import Bot, Dispatcher, types
@@ -13,20 +14,19 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 import logging
 storage = MemoryStorage()
-
-
 logging.basicConfig(level=logging.INFO)
+
 
 #Грузим конфиденциальные данные и опреляем дп с ботом
 load_dotenv()
 bot = Bot(os.getenv("TOKEN"))
 dp = Dispatcher(bot,storage=storage)
 
+
 #Фунццкция которая возвращает коннект
 def get_db_connection():
     conn = sqlite3.connect('endtermdatabase.db')
     return conn
-
 
 
 class Form(StatesGroup):
@@ -39,12 +39,6 @@ class Form(StatesGroup):
 
 class Delete_tour_cls(StatesGroup):
     delete_tour_state = State()
-
-
-
-
-
-
 
 
 #Старт хендлер
@@ -77,7 +71,8 @@ async def send_welcome(message: types.Message):
 async def send_welcome(message: types.Message):
     await message.answer(message.from_user.id)
 
-#Грузим джейсоны в текстс
+
+#Грузим джейсоны в текст
 with open("texts.json",'r',encoding="utf-8") as f:
     texts = json.load(f)
 
@@ -95,8 +90,31 @@ def get_fresh_tours():
 async def handle_tour_callback(callback_query: CallbackQuery):
     chahacteristics = get_especial_tour(int(callback_query.data))
     repr_it = f"Описание: {chahacteristics[0]}\nВремя старта: {chahacteristics[1]}\nВремя оканчание: {chahacteristics[2]}\nЦена: {chahacteristics[3]}"
-    await bot.send_photo(callback_query.from_user.id, caption=repr_it, photo=chahacteristics[4])
+    res_kb = InlineKeyboardMarkup().add(
+        InlineKeyboardButton("Забронировать",callback_data=f"{callback_query.data}reserve")
+    )
+    await bot.send_photo(callback_query.from_user.id, caption=repr_it, photo=chahacteristics[4],reply_markup=res_kb)
     await bot.answer_callback_query(callback_query.id)
+
+
+
+#пока что потом доработка
+@dp.callback_query_handler(lambda c:c.data[-1:-8:-1] == "evreser")
+async def reserve(callback_query: types.CallbackQuery):
+   try:
+       match = re.match(r"^\d+", callback_query.data)
+       if match:
+           tour_id = match.group()
+           add_to_reserved_tours(int(callback_query.from_user.id), tour_id)
+           await bot.send_message(callback_query.from_user.id,
+                                  "Тур успешно забронирован чтобы узнать по подробнее напишите вашему тур агенту @turarbek")
+       else:
+           await bot.send_message(callback_query.from_user.id, "Ошибка: не удалось извлечь ID тура.")
+   except Exception as e:
+       await bot.send_message(callback_query.from_user.id,"ВЫ УЖЕ ЗАБРОНИРОВАЛИ ЭТОТ ТУР СМОТРИТЕ В РАЗДЕЛЕ -ЗАБРОНИРОВАННЫЕ ТУРЫ-")
+   finally:
+       await bot.answer_callback_query(callback_query.id)
+
 
 
 #Хендлер все туры
@@ -104,21 +122,23 @@ async def handle_tour_callback(callback_query: CallbackQuery):
 async def send_welcome(message: types.Message):
     await message.answer(texts["Все туры"],reply_markup=get_fresh_tours())
 
+
 #хендлер о нас
 @dp.message_handler(text ="О нас")
-async def send_welcome(message: types.Message):
+async def about(message: types.Message):
     await message.answer(text=texts[message.text])
+
 
 #Хендлер заброннированных туров
 @dp.message_handler(text ="Забронированные туры")
-async def send_welcome(message: types.Message):
+async def show_reserved_tours(message: types.Message):
     pass
+
 
 #Хендлер админ-панель
 @dp.message_handler(text ="Админ-панель")
 async def send_welcome(message: types.Message):
     await message.answer(text="ADMIN-PANNEL",reply_markup=kb.inline_admin_btn)
-
 
 
 #BUTTON BACK
@@ -128,24 +148,13 @@ async def back_to_main(callback_query: types.CallbackQuery):
     await bot.answer_callback_query(callback_query.id)
 
 
-
-#пока что потом доработка
-@dp.callback_query_handler(lambda c: c.data == "Reserve")
-async def reserve(callback_query: types.CallbackQuery):
-    pass
-
-
-
-
-
-
-
 #колбэк куери для Добавить тур надо сделать ввод данных
 @dp.callback_query_handler(lambda c: c.data == "add_tour")
 async def add_tour_callback(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id,"ДОБАВЛЯЕМ ДАННЫЕ \nВВЕДИТЕ описание:")
     await Form.caption.set()
     await bot.answer_callback_query(callback_query.id)
+
 
 #Добавляем описание
 @dp.message_handler(state=Form.caption)
@@ -154,6 +163,7 @@ async def add_caption(message: types.Message, state: FSMContext):
         data['caption'] = message.text
     await message.answer("Введите начало тура по типу [dd:mm;yy]")
     await Form.start_date.set()
+
 
 #Добавляем стартувую дату
 @dp.message_handler(state=Form.start_date)
@@ -172,6 +182,7 @@ async def add_end_date(message: types.Message, state: FSMContext):
     await message.answer("Введите PRICE")
     await Form.price.set()
 
+
 #Добавляем цену
 @dp.message_handler(state=Form.price)
 async def add_price(message: types.Message, state: FSMContext):
@@ -179,6 +190,7 @@ async def add_price(message: types.Message, state: FSMContext):
         data['price'] = message.text
     await message.answer("Отправьте картинку")
     await Form.img.set()
+
 
 #Фианльная добавка фоты и пуш в БД
 @dp.message_handler(state=Form.img,content_types= aiogram.types.ContentType.PHOTO)
@@ -216,8 +228,6 @@ async def delete_tour(message: types.Message, state: FSMContext):
         print(f"Ошибка при удалении тура: {e}")
         await message.answer(f"Ошибка при удалении тура: {e}")
     await state.finish()
-
-
 
 
 if __name__ == '__main__':

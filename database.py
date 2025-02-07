@@ -26,15 +26,17 @@ CREATE TABLE IF NOT EXISTS users (
 cursor.execute("""
            CREATE TABLE IF NOT EXISTS reserved_tours (
                id INTEGER PRIMARY KEY,
-                user_id INTEGER UNIQUE,
-                caption TEXT,
-                start_date TEXT,
-                end_date TEXT,
-                price TEXT,
-                   img TEXT
+               user_id INTEGER,
+               tour_id TEXT UNIQUE
            )
        """)
 conn.commit()
+
+def add_to_reserved_tours(user_id,tour_id):
+    cursor.execute("INSERT INTO reserved_tours (user_id,tour_id) VALUES (?, ?)", (user_id,tour_id))
+    conn.commit()
+
+
 
 
 def add_tour(caption,start_date,end_date,price,img):
