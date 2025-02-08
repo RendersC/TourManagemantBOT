@@ -130,7 +130,7 @@ async def send_welcome(message: types.Message):
 #хендлер о нас
 @dp.message_handler(text ="О нас")
 async def about(message: types.Message):
-    await message.answer(text=texts[message.text])
+    await bot.send_photo(caption=texts[message.text],photo="https://www.onetwotrip.com/ru/blog/static/images/travel-now/time-to-travel.jpg",chat_id=message.from_user.id)
 
 
 #Хендлер заброннированных туров
